@@ -1,0 +1,15 @@
+{
+  "values": [
+    "minecraft:barrier",
+    "minecraft:carrot_on_a_stick",
+    "minecraft:debug_stick",
+    "minecraft:jigsaw",
+    "minecraft:light",
+    "minecraft:structure_block",
+    "minecraft:structure_void",
+    "minecraft:test_block",
+    "minecraft:test_instance_block",
+    "minecraft:trial_spawner",
+    "minecraft:vault"
+  ]
+}

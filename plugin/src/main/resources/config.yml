@@ -1,0 +1,18 @@
+# Restart the server to apply changes.
+# standard: kelp, dried kelp and dried kelp blocks go to Ocean.
+# kelp-as-fuel: those three go to Raw, Food and Coal respectively.
+variant: standard
+
+# hopper: insert directly into the receiver hopper; leave overflow at the controller.
+# frame: use the original behavior and teleport the item to the frame.
+delivery: hopper
+
+# Simulate a glass cap for matching receiver hoppers, so vanilla skips the
+# dropped-item search and pulls from above. Hopper output still works.
+# This setting only applies to hopper delivery. A physical glass cap also works.
+virtual-glass: true
+
+# Radius from each controller to its receivers, in blocks.
+max-distance: 128
+sort-interval-ticks: 20
+effects: true

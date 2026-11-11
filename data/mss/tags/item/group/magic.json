@@ -1,0 +1,20 @@
+{
+  "values": [
+    "minecraft:bedrock",
+    "minecraft:blaze_powder",
+    "minecraft:blaze_rod",
+    "minecraft:brewing_stand",
+    "minecraft:cauldron",
+    "minecraft:dragon_breath",
+    "minecraft:enchanted_golden_apple",
+    "minecraft:enchanting_table",
+    "minecraft:ender_eye",
+    "minecraft:ender_pearl",
+    "minecraft:experience_bottle",
+    "minecraft:glass_bottle",
+    "minecraft:glistering_melon_slice",
+    "minecraft:golden_apple",
+    "minecraft:golden_carrot",
+    "minecraft:honey_bottle"
+  ]
+}

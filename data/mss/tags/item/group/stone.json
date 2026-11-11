@@ -1,0 +1,28 @@
+{
+  "values": [
+    "minecraft:andesite",
+    "minecraft:basalt",
+    "minecraft:blackstone",
+    "minecraft:calcite",
+    "minecraft:cinnabar",
+    "minecraft:clay",
+    "minecraft:clay_ball",
+    "minecraft:cobbled_deepslate",
+    "minecraft:cobblestone",
+    "minecraft:deepslate",
+    "minecraft:diorite",
+    "minecraft:dripstone_block",
+    "minecraft:granite",
+    "minecraft:mossy_cobblestone",
+    "minecraft:pointed_dripstone",
+    "minecraft:potent_sulfur",
+    "minecraft:reinforced_deepslate",
+    "minecraft:resin_block",
+    "minecraft:resin_clump",
+    "minecraft:smooth_basalt",
+    "minecraft:stone",
+    "minecraft:sulfur",
+    "minecraft:sulfur_spike",
+    "minecraft:tuff"
+  ]
+}

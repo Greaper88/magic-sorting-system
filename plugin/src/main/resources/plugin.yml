@@ -1,0 +1,17 @@
+name: MagicSortingSystem
+version: '1.0.0'
+main: io.github.greaper88.mss.MagicSortingPlugin
+api-version: '26.3'
+folia-supported: true
+description: Sorts items dropped on a lapis and gold controller into labeled receivers.
+author: Greaper88
+commands:
+  magicsorting:
+    aliases: [mss]
+    description: Show the Magic Sorting System status.
+    usage: /<command> status
+    permission: magicsorting.admin
+permissions:
+  magicsorting.admin:
+    description: View Magic Sorting System server status.
+    default: op

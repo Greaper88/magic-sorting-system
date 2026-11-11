@@ -1,6 +1,13 @@
 {
   "pack": {
-    "pack_format": 3,
-    "description": "Magic Sorting System"
+    "description": "Magic Sorting System \u2014 Java Edition 26.3",
+    "min_format": [
+      121,
+      0
+    ],
+    "max_format": [
+      121,
+      0
+    ]
   }
 }

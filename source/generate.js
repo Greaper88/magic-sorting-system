@@ -1,101 +1,103 @@
 #!/usr/bin/env node
+'use strict';
 
-// Magic Sorting System
-// (c) 2018 - 2020 Joseph Huckaby, MIT License
-// Minecraft Data Pack Function Generator
-// Reads item sorting info from config.json and generates all .mcfunction files
-// Usage: node generate.js
+// Magic Sorting System, based on Joseph Huckaby's MIT-licensed generator.
+// Usage: node source/generate.js [config.json] [output-root]
+const fs = require('node:fs');
+const path = require('node:path');
+const assert = require('node:assert/strict');
 
-var fs = require('fs');
-var Path = require('path');
-var config = require( Path.join( __dirname, 'config.json') );
-
-process.chdir( __dirname );
-var func_dir = Path.resolve( "../data/mss/functions" );
-var sort_func_file = Path.join( func_dir, "sort.mcfunction" );
-var group_names = config.groups.map( function(group) { return group.group_name; } );
-
-// start generating main sort.mcfunction code
-var sort_lines = [
-	"# Magic Sorting System v2.0 -- Sort Single Item",
-	"# Expects input @s from previous execute / run",
-	"# " + group_names.length + " Groups: " + group_names.join(', '),
-	""
-];
-
-// add optional sound/particle effects on teleport
-if (config.effects) {
-	config.effects.forEach( function(effect) {
-		sort_lines.push( "execute at @s unless score #mss_cooldown mss_cooldown matches 1 run " + effect );
-	} );
+function validateConfig(config) {
+  const resource = /^[a-z0-9_.-]+:[a-z0-9_./-]+$/;
+  const groups = new Map();
+  const frames = new Set();
+  const items = new Set();
+  assert(Number.isFinite(config.max_teleport_distance) && config.max_teleport_distance > 0,
+    'max_teleport_distance must be positive');
+  assert(typeof config.final_fallback === 'string' && config.final_fallback.length &&
+    !/[\r\n]/.test(config.final_fallback), 'final_fallback must be a single command');
+  assert(Array.isArray(config.effects) && config.effects.every(effect =>
+    typeof effect === 'string' && effect.length && !/[\r\n]/.test(effect)),
+  'effects must contain single-line commands');
+  assert(Array.isArray(config.groups) && config.groups.length, 'groups must not be empty');
+  for (const group of config.groups) {
+    const id = group.group_name;
+    assert(typeof id === 'string' && /^[a-z0-9_-]+$/.test(id), `Invalid group ID: ${id}`);
+    assert(!groups.has(id), `Duplicate group: ${id}`);
+    assert(resource.test(group.item_frame), `Invalid receiver item: ${group.item_frame}`);
+    assert(!frames.has(group.item_frame), `Duplicate receiver item: ${group.item_frame}`);
+    assert(Array.isArray(group.items) && group.items.length, `Empty group: ${id}`);
+    groups.set(id, group);
+    frames.add(group.item_frame);
+    for (const item of group.items) {
+      assert(resource.test(item), `Invalid item ID: ${item}`);
+      assert(!items.has(item), `Duplicate item: ${item}`);
+      items.add(item);
+    }
+  }
+  assert(groups.has('misc'), 'A misc group is required for unrecognized items');
+  for (const group of config.groups) {
+    const visited = new Set([group.group_name]);
+    let fallback = group.fallback;
+    while (fallback) {
+      assert(groups.has(fallback), `Unknown fallback: ${fallback}`);
+      assert(!visited.has(fallback), `Fallback cycle: ${group.group_name}`);
+      visited.add(fallback);
+      fallback = groups.get(fallback).fallback;
+    }
+  }
+  return items;
 }
 
-// set cooldown flag
-sort_lines.push(
-	"scoreboard players set #mss_cooldown mss_cooldown 1",
-	""
-);
+function generate(config, outputRoot = path.resolve(__dirname, '..')) {
+  const items = validateConfig(config);
+  const functionDir = path.join(outputRoot, 'data/mss/function');
+  const tagDir = path.join(outputRoot, 'data/mss/tags/item/group');
+  fs.mkdirSync(functionDir, { recursive: true });
+  fs.mkdirSync(tagDir, { recursive: true });
+  // Remove only generated files, so deleted custom groups cannot linger.
+  for (const name of fs.readdirSync(functionDir)) {
+    if (/^sort(?:_[a-z0-9_-]+)?\.mcfunction$/.test(name)) {
+      fs.unlinkSync(path.join(functionDir, name));
+    }
+  }
+  for (const name of fs.readdirSync(tagDir)) {
+    if (name.endsWith('.json')) fs.unlinkSync(path.join(tagDir, name));
+  }
+  const lines = [
+    '# Magic Sorting System -- Minecraft Java Edition 26.3',
+    '# Executes as the dropped item, positioned at its controller.',
+    '# Return after dispatch so one item can only take one sorting path.',
+    ...config.effects.map(effect =>
+      `execute unless score #mss_cooldown mss_cooldown matches 1 run ${effect}`),
+    'scoreboard players set #mss_cooldown mss_cooldown 1',
+    ''
+  ];
+  for (const group of config.groups) {
+    const id = group.group_name;
+    const receiver = `type=#mss:item_frames,nbt={Item:{id:"${group.item_frame}"}},distance=..${config.max_teleport_distance}`;
+    const fallback = group.fallback ? `function mss:sort_${group.fallback}` : config.final_fallback;
+    fs.writeFileSync(path.join(functionDir, `sort_${id}.mcfunction`), [
+      `# ${id}: ${group.item_frame}`,
+      `execute if entity @e[${receiver},limit=1] run return run teleport @s @e[${receiver},limit=1,sort=random]`,
+      `return run ${fallback}`,
+      ''
+    ].join('\n'));
+    fs.writeFileSync(path.join(tagDir, `${id}.json`), JSON.stringify({ values: group.items }, null, 2) + '\n');
+    if (id !== 'misc') {
+      lines.push(`execute if items entity @s contents #mss:group/${id} run return run function mss:sort_${id}`);
+    }
+  }
+  lines.push('return run function mss:sort_misc', '');
+  fs.writeFileSync(path.join(functionDir, 'sort.mcfunction'), lines.join('\n'));
+  return { items: items.size, groups: config.groups.length };
+}
 
-console.log("Magic Sorting System -- Code Generator v2.0");
-console.log("");
+if (require.main === module) {
+  const configPath = process.argv[2] ? path.resolve(process.argv[2]) : path.join(__dirname, 'config.json');
+  const outputRoot = process.argv[3] ? path.resolve(process.argv[3]) : path.resolve(__dirname, '..');
+  const result = generate(JSON.parse(fs.readFileSync(configPath, 'utf8')), outputRoot);
+  console.log(`Generated ${result.items} items in ${result.groups} groups from ${path.basename(configPath)}.`);
+}
 
-var total_items = 0;
-var all_item_ids = {};
-var all_group_ids = {};
-var all_item_frame_ids = {};
-
-config.groups.forEach( function(group) {
-	var group_id = group.group_name.replace(/\W+/g, '');
-	var items = group.items;
-	var target = group.item_frame;
-	
-	if (group_id in all_group_ids) {
-		console.error("ERROR: Duplicate Group ID: " + group_id);
-		return;
-	}
-	all_group_ids[group_id] = 1;
-	
-	if (target in all_item_frame_ids) {
-		console.error("ERROR: Duplicate Item Frame ID: " + target);
-		return;
-	}
-	all_item_frame_ids[target] = 1;
-	
-	if (items && items.length && target) {
-		var group_func_file = Path.join( func_dir, "sort_" + group_id + ".mcfunction" );
-		var fallback_action = group.fallback ? ('function mss:sort_' + group.fallback) : config.final_fallback;
-		
-		// create special sort mcfunction for group
-		fs.writeFileSync( group_func_file, 
-			'execute as @s if entity @e[type=minecraft:item_frame,nbt={Item:{id:"' + target + '"}},distance=0..' + config.max_teleport_distance + '] run teleport @s @e[limit=1,sort=random,type=minecraft:item_frame,nbt={Item:{id:"' + target + '"}},distance=0..' + config.max_teleport_distance + ']' + "\n" +
-			'execute as @s unless entity @e[type=minecraft:item_frame,nbt={Item:{id:"' + target + '"}},distance=0..' + config.max_teleport_distance + '] run ' + fallback_action + "\n"
-		);
-		console.log("Wrote file: " + Path.relative(__dirname, group_func_file));
-		
-		// add group's items to main sort routine
-		items.forEach( function(item_id, idx) {
-			
-			if (item_id in all_item_ids) {
-				console.error("ERROR: Duplicate Item ID: " + item_id);
-			}
-			all_item_ids[item_id] = 1;
-			
-			sort_lines.push(
-				'execute as @s if entity @s[type=item,nbt={Item:{id:"' + item_id + '"}}] run function mss:sort_' + group_id
-			);
-			total_items++;
-		} );
-	}
-	else console.error("ERROR: Invalid group, skipping: " + group_id);
-} );
-
-fs.writeFileSync( sort_func_file, sort_lines.join("\n") + "\n" );
-
-console.log("Wrote file: " + Path.relative(__dirname, sort_func_file));
-
-console.log("");
-console.log( total_items + " total items sorted." );
-console.log( group_names.length + " sort groups created: " + group_names.join(', ') );
-
-console.log("");
-console.log("Complete!");
+module.exports = { generate, validateConfig };

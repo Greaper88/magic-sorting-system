@@ -1,0 +1,14 @@
+{
+  "values": [
+    "minecraft:activator_rail",
+    "minecraft:chest_minecart",
+    "minecraft:command_block_minecart",
+    "minecraft:detector_rail",
+    "minecraft:furnace_minecart",
+    "minecraft:hopper_minecart",
+    "minecraft:minecart",
+    "minecraft:powered_rail",
+    "minecraft:rail",
+    "minecraft:tnt_minecart"
+  ]
+}

@@ -1,0 +1,9 @@
+name: MSSServerProbe
+version: '1.0'
+api-version: '26.3'
+main: mss.smoke.ServerProbe
+folia-supported: true
+depend: [MagicSortingSystem]
+commands:
+  mssprobe:
+    description: Runs a phase of the server integration check.
