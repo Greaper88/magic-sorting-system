@@ -355,6 +355,6 @@ The JAR is written to `plugin/target/magic-sorting-system-1.0.0.jar`. It bundles
 
 # License
 
-[MIT](LICENSE), originally by Joseph Huckaby, with updates by G.Reaper.
+[MIT](LICENSE), originally by Joseph Huckaby, with updates by G.Reaper, and further updates and plugin conversion AI assisted with Codex.
 
 Not an official Minecraft product. Not approved by or associated with Mojang.
